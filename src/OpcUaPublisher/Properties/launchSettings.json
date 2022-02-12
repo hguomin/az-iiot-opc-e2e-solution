@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Microsoft.Azure.IIoT.Modules.OpcUa.Publisher": {
+      "commandName": "Project",
+      "commandLineArgs": "--aa --pf publishednodes_danfoss.json --c \"HostName=dfspoc-iothub.azure-devices.cn;SharedAccessKeyName=iothubowner;SharedAccessKey=jTC5N067VwRp+FLe61WQxhY9BNOeJLkvlXBY6uATgPE=\""
+    }
+  }
+}

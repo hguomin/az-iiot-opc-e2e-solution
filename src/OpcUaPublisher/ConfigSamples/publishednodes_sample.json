@@ -1,0 +1,16 @@
+[
+  {
+    "EndpointUrl": "opc.tcp://172.17.198.216:48400/UA/ComServerWrapper",
+    "UseSecurity": false,
+    "OpcAuthenticationMode": "UsernamePassword",
+    "PlainAuthUsername": "opcda",
+    "PlainAuthPassword": "Password01!",
+    "OpcNodes": [
+      {
+        "Id": "ns=2;s=0:Random.Real8",
+        "OpcSamplingInterval": 1000,
+        "OpcPublishingInterval": 1000
+      }
+    ]
+  }
+]
