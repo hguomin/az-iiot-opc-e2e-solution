@@ -1,6 +1,6 @@
 [
   {
-    "EndpointUrl": "opc.tcp://172.17.198.216:48400/UA/ComServerWrapper",
+    "EndpointUrl": "opc.tcp://127.0.0.1:48400/UA/ComServerWrapper",
     "UseSecurity": false,
     "OpcAuthenticationMode": "UsernamePassword",
     "PlainAuthUsername": "opcda",

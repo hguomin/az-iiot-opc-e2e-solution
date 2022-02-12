@@ -148,7 +148,7 @@
         <WrappedServers>
           <ComClientConfiguration i:type="ComDaClientConfiguration">
 			  <!--ServerUrl>opc.com://localhost/Softing.OPCToolboxDemo_ServerDA.1</ServerUrl-->
-			<ServerUrl>opc.com://172.17.198.216/Matrikon.OPC.Simulation.1</ServerUrl>
+			<ServerUrl>opc.com://127.0.0.1/Matrikon.OPC.Simulation.1</ServerUrl>
             <ServerName>DA</ServerName>
             <MaxReconnectWait>10000</MaxReconnectWait>
             <SeperatorChars></SeperatorChars>

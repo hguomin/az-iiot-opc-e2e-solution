@@ -2,7 +2,8 @@
   "profiles": {
     "Microsoft.Azure.IIoT.Modules.OpcUa.Publisher": {
       "commandName": "Project",
-      "commandLineArgs": "--aa --pf publishednodes_danfoss.json --c \"HostName=dfspoc-iothub.azure-devices.cn;SharedAccessKeyName=iothubowner;SharedAccessKey=jTC5N067VwRp+FLe61WQxhY9BNOeJLkvlXBY6uATgPE=\""
+      "commandLineArgs": "--aa --pf .\\conf\\publishednodes_sample.json --c \"HostName=gm-dev-iothub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=lFbtUiJRC/Fj0QSBTeP0lLjMZu4pJZ+p1cY8+CxgD3s=\"",
+      "workingDirectory": "E:\\Projects\\Azure\\iiot\\az-iiot-opc-e2e-solution\\src\\Build\\IoTHubOpcUaPublissher\\Debug\\netcoreapp3.1"
     }
   }
 }
