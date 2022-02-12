@@ -1,0 +1,1 @@
+This project is based on the Microsoft.Azure.IIoT.OpcUa.Edge.Publisher module from [Industrial-IoT](https://github.com/Azure/Industrial-IoT/) version [2.5.6](https://github.com/Azure/Industrial-IoT/releases/tag/2.5.6)
