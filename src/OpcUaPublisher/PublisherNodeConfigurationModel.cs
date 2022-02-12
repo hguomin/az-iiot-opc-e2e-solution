@@ -337,7 +337,7 @@ namespace OpcPublisher
         /// Gets or sets the plain username to authenticate against the OPC UA Server (when OpcAuthenticationMode is set to UsernamePassword
         /// </summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore, NullValueHandling = NullValueHandling.Ignore)]
-        public string PlainAuthUsername
+        public string OpcAuthenticationUsername
         {
             set
             {
@@ -355,7 +355,7 @@ namespace OpcPublisher
         /// Gets or sets the plain password to authenticate against the OPC UA Server (when OpcAuthenticationMode is set to UsernamePassword
         /// </summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore, NullValueHandling = NullValueHandling.Ignore)]
-        public string PlainAuthPassword
+        public string OpcAuthenticationPassword
         {
             set
             {

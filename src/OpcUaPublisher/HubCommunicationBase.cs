@@ -1603,8 +1603,7 @@ namespace OpcPublisher
             uint hubMessageBufferSize = (HubMessageSize > 0 ? HubMessageSize : HubMessageSizeMax) - (uint)systemPropertyLength - jsonSquareBracketLength - (uint)applicationPropertyLength;
             byte[] hubMessageBuffer = new byte[hubMessageBufferSize];
             MemoryStream hubMessage = new MemoryStream(hubMessageBuffer);
-            DateTime nextSendTime = DateTime.UtcNow + TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
-            double millisecondsTillNextSend = nextSendTime.Subtract(DateTime.UtcNow).TotalMilliseconds;
+            var nextSendTime = DateTime.UtcNow + TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
             bool singleMessageSend = DefaultSendIntervalSeconds == 0 && HubMessageSize == 0;
 
             using (hubMessage)
@@ -1624,26 +1623,38 @@ namespace OpcPublisher
                     }
                     while (true)
                     {
+                        TimeSpan timeTillNextSend;
+                        int millisToWait;
                         // sanity check the send interval, compute the timeout and get the next monitored item message
                         if (DefaultSendIntervalSeconds > 0)
                         {
-                            millisecondsTillNextSend = nextSendTime.Subtract(DateTime.UtcNow).TotalMilliseconds;
-                            if (millisecondsTillNextSend < 0)
+                            timeTillNextSend = nextSendTime.Subtract(DateTime.UtcNow);
+                            if (timeTillNextSend < TimeSpan.Zero)
                             {
                                 MissedSendIntervalCount++;
                                 // do not wait if we missed the send interval
-                                millisecondsTillNextSend = 0;
+                                timeTillNextSend = TimeSpan.Zero;
+                            }
+
+                            long millisLong = (long)timeTillNextSend.TotalMilliseconds;
+                            if (millisLong < 0 || millisLong > int.MaxValue)
+                            {
+                                millisToWait = 0;
+                            }
+                            else
+                            {
+                                millisToWait = (int)millisLong;
                             }
                         }
                         else
                         {
                             // if we are in shutdown do not wait, else wait infinite if send interval is not set
-                            millisecondsTillNextSend = ct.IsCancellationRequested ? 0 : Timeout.Infinite;
+                            millisToWait = ct.IsCancellationRequested ? 0 : -1;
                         }
-                        bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, (int)millisecondsTillNextSend, ct);
+                        bool gotItem = _monitoredItemsDataQueue.TryTake(out messageData, millisToWait, ct);
 
                         // the two commandline parameter --ms (message size) and --si (send interval) control when data is sent to IoTHub/EdgeHub
-                        // pls see detailed comments on performance and memory consumption at https://github.com/Azure/iot-edge-opc-publisher
+                        // pls see detailed comments on performance and memory consumption at https://github.com/Azure/Industrial-IoT /docs/modules
 
                         // check if we got an item or if we hit the timeout or got canceled
                         if (gotItem)
@@ -1710,6 +1721,7 @@ namespace OpcPublisher
                             // if we reached the send interval, but have nothing to send (only the opening square bracket is there), we continue
                             if (!gotItem && hubMessage.Position == 1)
                             {
+                                Logger.Verbose("Adding {seconds} seconds to current nextSendTime {nextSendTime}...", DefaultSendIntervalSeconds, nextSendTime);
                                 nextSendTime += TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
                                 hubMessage.Position = 0;
                                 hubMessage.SetLength(0);
@@ -1738,7 +1750,12 @@ namespace OpcPublisher
                                 encodedhubMessage.ContentType = CONTENT_TYPE_OPCUAJSON;
                                 encodedhubMessage.ContentEncoding = CONTENT_ENCODING_UTF8;
 
-                                nextSendTime += TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
+                                if (nextSendTime < DateTime.UtcNow)
+                                {
+                                    Logger.Verbose("Adding {seconds} seconds to current nextSendTime {nextSendTime}...", DefaultSendIntervalSeconds, nextSendTime);
+                                    nextSendTime += TimeSpan.FromSeconds(DefaultSendIntervalSeconds);
+                                }
+
                                 try
                                 {
                                     SentBytes += encodedhubMessage.GetBytes().Length;
@@ -1747,8 +1764,13 @@ namespace OpcPublisher
                                     SentLastTime = DateTime.UtcNow;
                                     Logger.Debug($"Sending {encodedhubMessage.BodyStream.Length} bytes to hub.");
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
+                                    if (ex is AggregateException)
+                                    {
+                                        ex = ((AggregateException)ex).Flatten();
+                                    }
+                                    Logger.Error(ex, "Error while sending message. Dropping...");
                                     FailedMessages++;
                                 }
 

@@ -10,10 +10,10 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>../Build/IoTHubOpcUaPublissher/Debug</OutputPath>
+    <OutputPath>../Build/OpcUaPublissher/Debug</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>../Build/IoTHubOpcUaPublissher/Release</OutputPath>
+    <OutputPath>../Build/OpcUaPublissher/Release</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="CertificateStores\**" />
@@ -38,28 +38,22 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Devices" Version="1.18.1" />
-    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.21.0" />
-    <PackageReference Include="Mono.Options" Version="5.3.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.357.28" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="2.0.4" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="Serilog.Sinks.File" Version="4.0.0" />
+    <PackageReference Include="Microsoft.Azure.Devices" Version="1.35.0" />
+    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.38.0" />
+    <PackageReference Include="Mono.Options" Version="6.12.0.148" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Bindings.Https" Version="1.4.367.95" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client" Version="1.4.367.95" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Configuration" Version="1.4.367.95" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" Version="1.4.367.95" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="ConfigSamples\publishednodes_sample.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="ConfigSamples\telemetryconfiguration.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Configuration Files\conf\publishednodes_danfoss.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="conf\publishednodes_danfoss.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.0.0" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="conf\publishednodes_sample.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

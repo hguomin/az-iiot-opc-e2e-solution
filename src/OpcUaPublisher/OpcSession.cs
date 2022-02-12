@@ -561,7 +561,6 @@ namespace OpcPublisher
 
                     // process all unmonitored items.
                     var unmonitoredItems = opcSubscription.OpcMonitoredItems.Where(i => (i.State == OpcMonitoredItemState.Unmonitored || i.State == OpcMonitoredItemState.UnmonitoredNamespaceUpdateRequested)).ToArray();
-                    int additionalMonitoredItemsCount = 0;
                     int monitoredItemsCount = 0;
                     bool haveUnmonitoredItems = false;
                     if (unmonitoredItems.Any())
@@ -574,8 +573,9 @@ namespace OpcPublisher
                     // init perf data
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-                    foreach (var item in unmonitoredItems)
-                    {
+                    for(int index = 0; index < unmonitoredItems.Length; index++) {
+                        var item = unmonitoredItems[index];
+
                         // if the session is not connected or a shutdown is in progress, we stop trying and wait for the next cycle
                         if (ct.IsCancellationRequested || State != SessionState.Connected)
                         {
@@ -676,7 +676,7 @@ namespace OpcPublisher
                             monitoredItem.Notification += item.Notification;
 
                             opcSubscription.OpcUaClientSubscription.AddItem(monitoredItem);
-                            if (additionalMonitoredItemsCount++ % 10000 == 0)
+                            if (index % 10000 == 0 || index == (unmonitoredItems.Length - 1))
                             {
                                 opcSubscription.OpcUaClientSubscription.SetPublishingMode(true);
                                 opcSubscription.OpcUaClientSubscription.ApplyChanges();
@@ -690,9 +690,9 @@ namespace OpcPublisher
                                 Logger.Information($"Sampling interval: requested: {item.RequestedSamplingInterval}; revised: {monitoredItem.SamplingInterval}");
                                 item.SamplingInterval = monitoredItem.SamplingInterval;
                             }
-                            if (additionalMonitoredItemsCount % 10000 == 0)
+                            if (index % 10000 == 0)
                             {
-                                Logger.Information($"Now monitoring {monitoredItemsCount + additionalMonitoredItemsCount} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
+                                Logger.Information($"Now monitoring {monitoredItemsCount + index} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'");
                             }
                         }
                         catch (Exception e) when (e.GetType() == typeof(ServiceResultException))
@@ -707,6 +707,13 @@ namespace OpcPublisher
                                         InternalDisconnect();
                                         break;
                                     }
+                                case StatusCodes.BadSubscriptionIdInvalid:
+                                {
+                                    Logger.Information($"Subscription with Id {opcSubscription.OpcUaClientSubscription.Id} is no longer available on endpoint '{EndpointUrl}'. Cleaning up.");
+                                    // clean up the session/subscription
+                                    InternalDisconnect();
+                                    break;
+                                }
                                 case StatusCodes.BadNodeIdInvalid:
                                 case StatusCodes.BadNodeIdUnknown:
                                     {
@@ -726,13 +733,13 @@ namespace OpcPublisher
                             Logger.Error(e, $"Failed to monitor node '{currentNodeId}' on endpoint '{EndpointUrl}'");
                         }
                     }
-                    opcSubscription.OpcUaClientSubscription.SetPublishingMode(true);
-                    opcSubscription.OpcUaClientSubscription.ApplyChanges();
+
                     stopWatch.Stop();
                     if (haveUnmonitoredItems == true)
                     {
                         monitoredItemsCount = opcSubscription.OpcMonitoredItems.Count(i => (i.State == OpcMonitoredItemState.Monitored));
-                        Logger.Information($"Done processing unmonitored items on endpoint '{EndpointUrl}' took {stopWatch.ElapsedMilliseconds} msec. Now monitoring {monitoredItemsCount} items in subscription with id '{opcSubscription.OpcUaClientSubscription.Id}'.");
+                        uint id = opcSubscription.OpcUaClientSubscription?.Id ?? 0;
+                        Logger.Information($"Done processing unmonitored items on endpoint '{EndpointUrl}' took {stopWatch.ElapsedMilliseconds} msec. Now monitoring {monitoredItemsCount} items in subscription with id '{id}'.");
                     }
                 }
             }
@@ -1293,7 +1300,7 @@ namespace OpcPublisher
         /// </summary>
         private IOpcUaSubscription CreateSubscription(int requestedPublishingInterval, out int revisedPublishingInterval)
         {
-            IOpcUaSubscription subscription = new OpcUaSubscription
+            IOpcUaSubscription subscription = new OpcUaSubscription(OpcUaClientSession.DefaultSubscription)
             {
                 PublishingInterval = requestedPublishingInterval,
             };
@@ -1330,6 +1337,7 @@ namespace OpcPublisher
                         Logger.Information($"Outstanding requests: {session.OutstandingRequestCount}, Defunct requests: {session.DefunctRequestCount}");
                         Logger.Information($"Good publish requests: {session.GoodPublishRequestCount}, KeepAlive interval: {session.KeepAliveInterval}");
                         Logger.Information($"SessionId: {session.SessionId}");
+                        Logger.Information($"Session State: {State}");
 
                         if (State == SessionState.Connected)
                         {

@@ -3,8 +3,8 @@
     "EndpointUrl": "opc.tcp://127.0.0.1:48400/UA/ComServerWrapper",
     "UseSecurity": false,
     "OpcAuthenticationMode": "UsernamePassword",
-    "PlainAuthUsername": "opcda",
-    "PlainAuthPassword": "Password01!",
+    "OpcAuthenticationUsername": "opcda",
+    "OpcAuthenticationPassword": "Password01!",
     "OpcNodes": [
       {
         "Id": "ns=2;s=0:Random.Real8",

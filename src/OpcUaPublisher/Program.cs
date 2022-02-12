@@ -100,7 +100,7 @@ namespace OpcPublisher
         {
             if (IotEdgeIndicator.RunsAsIotEdgeModule)
             {
-                var waitForDebugger = args.Any(a => a.ToLower().Contains("wfd") || a.ToLower().Contains("waitfordebugger"));
+                var waitForDebugger = args.Any(a => a.Contains("wfd", StringComparison.OrdinalIgnoreCase) || a.Contains("waitfordebugger", StringComparison.OrdinalIgnoreCase));
 
                 if (waitForDebugger)
                 {
@@ -233,7 +233,7 @@ namespace OpcPublisher
                             }
                         },
                         { "ms|iothubmessagesize=", $"the max size of a message which can be send to IoTHub. when telemetry of this size is available it will be sent.\n0 will enforce immediate send when telemetry is available\nMin: 0\nMax: {HubMessageSizeMax}\nDefault: {HubMessageSize}", (uint u) => {
-                                if (u >= 0 && u <= HubMessageSizeMax)
+                                if (u <= HubMessageSizeMax)
                                 {
                                     HubMessageSize = u;
                                 }
@@ -257,6 +257,9 @@ namespace OpcPublisher
 
                         { "dc|deviceconnectionstring=", $"{(IotEdgeIndicator.RunsAsIotEdgeModule ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
                             (string dc) => DeviceConnectionString = (IotEdgeIndicator.RunsAsIotEdgeModule ? null : dc)
+                        },
+                        { "ec|edgehubconnectionstring=", $"{(IotEdgeIndicator.RunsAsIotEdgeModule ? "not supported when running as IoTEdge module\n" : $"if publisher is not able to register itself with IoTHub, you can create a device with name <applicationname> manually and pass in the connectionstring of this device.\nDefault: none")}",
+                            (string dc) => EdgeHubConnectionString = (IotEdgeIndicator.RunsAsIotEdgeModule ? null : dc)
                         },
                         { "c|connectionstring=", $"the IoTHub owner connectionstring.\nDefault: none",
                             (string cs) => IotHubOwnerConnectionString = cs
@@ -665,14 +668,12 @@ namespace OpcPublisher
 
                 // show version
                 Logger.Information($"OPC Publisher V{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion} starting up...");
-                //Logger.Debug($"Informational version: V{(Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof(AssemblyInformationalVersionAttribute)) as AssemblyInformationalVersionAttribute).InformationalVersion}");
 
                 // allow canceling the application
                 var quitEvent = new ManualResetEvent(false);
                 try
                 {
-                    Console.CancelKeyPress += (sender, eArgs) =>
-                    {
+                    Console.CancelKeyPress += (sender, eArgs) => {
                         quitEvent.Set();
                         eArgs.Cancel = true;
                         ShutdownTokenSource.Cancel();
@@ -724,8 +725,12 @@ namespace OpcPublisher
                 // initialize the telemetry configuration
                 TelemetryConfiguration = PublisherTelemetryConfiguration.Instance;
 
+                // initialize the node configuration
+                NodeConfiguration = PublisherNodeConfiguration.Instance;
+
                 // initialize hub communication
-                if (IotEdgeIndicator.RunsAsIotEdgeModule)
+                if (IotEdgeIndicator.RunsAsIotEdgeModule ||
+                    !string.IsNullOrEmpty(EdgeHubConnectionString))
                 {
                     // initialize and start EdgeHub communication
                     Hub = IotEdgeHubCommunication.Instance;
@@ -735,9 +740,6 @@ namespace OpcPublisher
                     // initialize and start IoTHub communication
                     Hub = IotHubCommunication.Instance;
                 }
-
-                // initialize the node configuration
-                NodeConfiguration = PublisherNodeConfiguration.Instance;
 
                 // kick off OPC session creation and node monitoring
                 await SessionStartAsync().ConfigureAwait(false);
@@ -764,7 +766,14 @@ namespace OpcPublisher
                     Logger.Information("Publisher is running. Press CTRL-C to quit.");
 
                     // wait for Ctrl-C
-                    await Task.Delay(Timeout.Infinite, ShutdownTokenSource.Token).ConfigureAwait(false);
+                    try
+                    {
+                        await Task.Delay(Timeout.Infinite, ShutdownTokenSource.Token).ConfigureAwait(false);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        Logger.Information("Ctrl-C start shutdown...");
+                    }
                 }
 
                 Logger.Information("");
@@ -774,16 +783,19 @@ namespace OpcPublisher
 
                 // stop the server
                 _publisherServer.Stop();
+                Utils.SilentDispose(_publisherServer);
+                _publisherServer = null;
 
                 // shutdown all OPC sessions
                 await SessionShutdownAsync().ConfigureAwait(false);
 
                 // shutdown the IoTHub messaging
-                Hub.Dispose();
+                await Hub.ExitApplicationAsync(5).ConfigureAwait(false);
+                Utils.SilentDispose(Hub);
                 Hub = null;
 
                 // free resources
-                NodeConfiguration.Dispose();
+                Utils.SilentDispose(NodeConfiguration);
                 ShutdownTokenSource = null;
             }
             catch (Exception e)
@@ -799,7 +811,7 @@ namespace OpcPublisher
             }
 
             // shutdown diagnostics
-            Diag.Dispose();
+            Utils.SilentDispose(Diag);
             Diag = null;
         }
 
@@ -950,7 +962,7 @@ namespace OpcPublisher
             {
                 case "fatal":
                     loggerConfiguration.MinimumLevel.Fatal();
-                    OpcTraceToLoggerFatal = 0;
+                    OpcStackTraceMask = OpcTraceToLoggerFatal = 0;
                     break;
                 case "error":
                     loggerConfiguration.MinimumLevel.Error();
@@ -958,19 +970,29 @@ namespace OpcPublisher
                     break;
                 case "warn":
                     loggerConfiguration.MinimumLevel.Warning();
-                    OpcTraceToLoggerWarning = 0;
+                    OpcStackTraceMask = OpcTraceToLoggerError = Utils.TraceMasks.Error | Utils.TraceMasks.StackTrace;
+                    OpcTraceToLoggerWarning = Utils.TraceMasks.StackTrace;
+                    OpcStackTraceMask |= OpcTraceToLoggerWarning;
                     break;
                 case "info":
                     loggerConfiguration.MinimumLevel.Information();
-                    OpcStackTraceMask = OpcTraceToLoggerInformation = 0;
+                    OpcTraceToLoggerError = Utils.TraceMasks.Error;
+                    OpcTraceToLoggerWarning = Utils.TraceMasks.StackTrace;
+                    OpcTraceToLoggerInformation = Utils.TraceMasks.Security;
+                    OpcStackTraceMask = OpcTraceToLoggerError | OpcTraceToLoggerInformation | OpcTraceToLoggerWarning;
                     break;
                 case "debug":
                     loggerConfiguration.MinimumLevel.Debug();
-                    OpcStackTraceMask = OpcTraceToLoggerDebug = Utils.TraceMasks.StackTrace | Utils.TraceMasks.Operation |
-                        Utils.TraceMasks.StartStop | Utils.TraceMasks.ExternalSystem | Utils.TraceMasks.Security;
+                    OpcTraceToLoggerError = Utils.TraceMasks.Error;
+                    OpcTraceToLoggerWarning = Utils.TraceMasks.StackTrace;
+                    OpcTraceToLoggerInformation = Utils.TraceMasks.Security;
+                    OpcTraceToLoggerDebug = Utils.TraceMasks.Operation | Utils.TraceMasks.StartStop | Utils.TraceMasks.ExternalSystem;
+                    OpcStackTraceMask = OpcTraceToLoggerError | OpcTraceToLoggerInformation | OpcTraceToLoggerDebug | OpcTraceToLoggerWarning;
                     break;
                 case "verbose":
                     loggerConfiguration.MinimumLevel.Verbose();
+                    OpcTraceToLoggerError = Utils.TraceMasks.Error | Utils.TraceMasks.StackTrace;
+                    OpcTraceToLoggerInformation = Utils.TraceMasks.Security;
                     OpcStackTraceMask = OpcTraceToLoggerVerbose = Utils.TraceMasks.All;
                     break;
             }

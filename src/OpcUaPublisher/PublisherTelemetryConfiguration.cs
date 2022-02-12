@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace OpcPublisher
 {
+    using System.Collections;
     using System.IO;
     using System.Linq;
     using System.Text.RegularExpressions;
