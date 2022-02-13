@@ -69,7 +69,7 @@ For development purpose, we use the Matrikon OPC Simulation server to simulate a
     ![UaComServerWrapper configuration](docs/media/da-ua-gw-5.png)  
 
     Now you can use OPC UA client tool like [UaExpert](tools/uaexpert-bin-win32-x86-vs2008sp1-v1.5.1-331.zip) to connect to this server and explore the data it reads from the OPC DA server.   
-    ![UaComServerWrapper configuration](docs/media/da-ua-gw-6.png)  
+    ![UaComServerWrapper configuration](docs/media/da-ua-gw-6.PNG)  
 
 ### Run OPC UA Publisher  
 Follow this [guide](src/OpcUaPublisher/README.md) to run the OpcUaPublisher application to subscribe and send data from the OPC UA server inside UaComServerWrapper to Azure IoT Hub or IoT Central on cloud.
