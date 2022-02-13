@@ -57,7 +57,7 @@ $ docker tag opcua-publisher:latest gmdevcr.azurecr.io/opcua-publisher:latest
 $ docker push gmdevcr.azurecr.io/opcua-publisher:latest
 ```
 
-Now it's ready to deploy it to Azure IoT Edge device as a edge module, in the iot edge device, create a folder and put the configuration file `publishednodes.json` into it. `/opt/opcua-publisher` is used in below sample. 
+Now it's ready to deploy it to Azure IoT Edge device as a edge module, in the iot edge device, create a folder and put the configuration file `publishednodes.json` into it, `/opt/opcua-publisher` is used in below sample. And please note that the `/appdata` is the working directory of this application inside container.
 
 when seting the iot edge module in azure portal, set `Image URI` to `gmdevcr.azurecr.io/opcua-publisher:latest`, the `Container Create Options` set as below and a route with value `FROM /messages/* INTO $upstream` needed.
 ```json
