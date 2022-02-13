@@ -75,5 +75,5 @@ when seting the iot edge module in azure portal, set `Image URI` to `gmdevcr.azu
 }
 ```
 
-then the it will run as a edge module in Azure IoT Edge.
+then it will run as a edge module in Azure IoT Edge.
 
