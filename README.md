@@ -57,7 +57,7 @@ For development purpose, we use the Matrikon OPC Simulation server to simulate a
     Use the [UaComServerWrapperInstaller](pre-builds/UAComServerWrapper/UAComServerWrapperInstaller.msi) to start installation.
 3. Configure the OPC UA server inside UaComServerWrapper  
 
-    Set the OPC DA Server Url to which it connects, it's `opc.com://localhost/Matrikon.OPC.Simulation.1` in this guide.
+    Set the OPC DA Server Url to which it connects, it's `opc.com://localhost/Matrikon.OPC.Simulation.1` in this guide.   
     ![UaComServerWrapper configuration](docs/media/da-ua-gw-1.png)
     ![UaComServerWrapper configuration](docs/media/da-ua-gw-2.png)
 
