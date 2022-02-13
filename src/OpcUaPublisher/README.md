@@ -1,6 +1,6 @@
 # OPC UA Publisher Application
 
-This project is based on the Microsoft.Azure.IIoT.OpcUa.Edge.Publisher module from Azure [Industrial-IoT](https://github.com/Azure/Industrial-IoT/) version [2.5.6](https://github.com/Azure/Industrial-IoT/releases/tag/2.5.6).
+This project is based on the Microsoft.Azure.IIoT.OpcUa.Edge.Publisher module from Azure [Industrial-IoT](https://github.com/Azure/Industrial-IoT/) version [2.5.6](https://github.com/Azure/Industrial-IoT/releases/tag/2.5.6), built on .NET Core 3.1 LTS.
 
 Based on the upstream code, plain user name and password authentication configuration support is added, configuration sample can refer to below publishednodes.json: 
 ```json
